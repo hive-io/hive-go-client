@@ -4,7 +4,7 @@ name: default
 
 steps:
 - name: build
-  image: hive-registry:5000/hive/package-builder-ci:8.5
+  image: http://hive-registry:5000/hive/package-builder-ci:8.5
   insecure: true
   commands:
     - add-apt-repository ppa:hnakamur/golang-1.13'
