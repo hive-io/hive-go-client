@@ -4,6 +4,7 @@ name: default
 
 steps:
 - name: build
-  image: golang:latest
+  image: registry:5000/hive/package-builder-ci:8.5
   commands:
-  - go build
+    - add-apt-repository ppa:hnakamur/golang-1.13'
+    - /package.sh
