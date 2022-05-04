@@ -5,6 +5,7 @@ name: default
 steps:
 - name: build
   image: registry.house.geekcentral.io/hive/package-builder-ci:8.5
+  pull: always
   commands:
     - add-apt-repository ppa:hnakamur/golang-1.13
     - /package.sh
