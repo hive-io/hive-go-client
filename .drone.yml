@@ -70,17 +70,17 @@ steps:
     status:
     - success
 
-- name: notify
-  image: plugins/slack
-  settings:
-    webhook: https://hooks.slack.com/services/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
-    channel: build
-    template: >
-      Build {{ build.status }} - {{ repo.name }}/{{ build.branch }} {{ build.number }} (<{{ build.link }}|Open>)
-  when:
-    status:
-    - failure
-    - success
+# - name: notify
+#   image: plugins/slack
+#   settings:
+#     webhook: https://hooks.slack.com/services/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
+#     channel: build
+#     template: >
+#       Build {{ build.status }} - {{ repo.name }}/{{ build.branch }} {{ build.number }} (<{{ build.link }}|Open>)
+#   when:
+#     status:
+#     - failure
+#     - success
 
 - name: cleanup
   image: plugins/docker
