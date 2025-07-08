@@ -21,8 +21,15 @@ type Task struct {
 	Progress        float32   `json:"progress"`
 	QueueTime       int       `json:"queueTime"`
 	Ref             struct {
-		Cluster string `json:"cluster"`
-		Host    string `json:"host"`
+		Cluster  string `json:"cluster,omitempty"`
+		Host     string `json:"host,omitempty"`
+		Pool     string `json:"pool,omitempty"`
+		Template string `json:"template,omitempty"`
+		Guest    string `json:"guest,omitempty"`
+		Username string `json:"username,omitempty"`
+		Storage  string `json:"storage,omitempty"`
+		File     string `json:"file,omitempty"`
+		Device   string `json:"device,omitempty"`
 	} `json:"ref"`
 	StartTime time.Time `json:"startTime"`
 	State     string    `json:"state"`
@@ -128,12 +135,12 @@ func (task Task) WatchTaskWithContext(ctx context.Context, client *Client, taskD
 	}
 }
 
-//WaitForTask blocks until a task is complete and returns the task
+// WaitForTask blocks until a task is complete and returns the task
 func (task Task) WaitForTask(client *Client, printProgress bool) (*Task, error) {
 	return task.WaitForTaskWithContext(context.Background(), client, printProgress)
 }
 
-//WaitForTask blocks until a task is complete and returns the task
+// WaitForTask blocks until a task is complete and returns the task
 func (task Task) WaitForTaskWithContext(ctx context.Context, client *Client, printProgress bool) (*Task, error) {
 	var progress float32
 	newVal := task

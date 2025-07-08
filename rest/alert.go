@@ -14,8 +14,15 @@ type Alert struct {
 	Level        string `json:"level"`
 	Message      string `json:"message"`
 	Ref          struct {
-		Cluster string `json:"cluster"`
-		Host    string `json:"host"`
+		Cluster  string `json:"cluster,omitempty"`
+		Host     string `json:"host,omitempty"`
+		Pool     string `json:"pool,omitempty"`
+		Template string `json:"template,omitempty"`
+		Guest    string `json:"guest,omitempty"`
+		Username string `json:"username,omitempty"`
+		Storage  string `json:"storage,omitempty"`
+		File     string `json:"file,omitempty"`
+		Device   string `json:"device,omitempty"`
 	} `json:"ref"`
 	Tags      []string    `json:"tags"`
 	Timestamp interface{} `json:"timestamp"`
