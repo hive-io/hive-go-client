@@ -11,55 +11,56 @@ import (
 
 // Guest describes a guest record from the rest api
 type Guest struct {
-	Address             string                  `json:"address,omitempty"`
-	ADGroup             string                  `json:"ADGroup,omitempty"`
-	AgentInstalled      bool                    `json:"agentInstalled"`
-	AgentMetadata       *GuestAgentMetadata     `json:"agentMetadata"`
-	AgentVersion        string                  `json:"agentVersion,omitempty"`
-	Backup              *GuestBackup            `json:"backup,omitempty"`
-	Cpus                int                     `json:"cpus,omitempty"`
-	Currentmem          int                     `json:"currentmem,omitempty"`
-	Disks               []GuestDisk             `json:"disks,omitempty"`
-	DuplicateMitigation bool                    `json:"duplicateMitigation"`
-	Error               *GuestError             `json:"error,omitempty"`
-	External            bool                    `json:"external"`
-	DisablePortCheck    bool                    `json:"disablePortCheck"`
-	Gateway             string                  `json:"gateway,omitempty"`
-	GPU                 bool                    `json:"gpu"`
-	GuestState          string                  `json:"guestState,omitempty"`
-	HasBeenReady        bool                    `json:"hasBeenReady,omitempty"`
-	Hostid              string                  `json:"hostid,omitempty"`
-	HostDevices         []HostDevice            `json:"hostDevices,omitempty"`
-	Hostname            string                  `json:"hostname,omitempty"`
-	Interfaces          []GuestNetwork          `json:"interfaces,omitempty"`
-	Memory              int                     `json:"memory,omitempty"`
-	MigrationMetadata   *GuestMigrationMetadata `json:"migrationMetadata,omitempty"`
-	MigrationProcessing bool                    `json:"migrationProcessing"`
-	Name                string                  `json:"name,omitempty"`
-	Os                  string                  `json:"os,omitempty"`
-	Persistent          bool                    `json:"persistent,omitempty"`
-	PoolID              string                  `json:"poolId,omitempty"`
-	PreviousGuestState  string                  `json:"previousGuestState,omitempty"`
-	ProfileID           string                  `json:"profileId,omitempty"`
-	PublishedIP         string                  `json:"publishedIp,omitempty"`
-	RdpUserInjected     bool                    `json:"rdpUserInjected,omitempty"`
-	Realm               string                  `json:"realm,omitempty"`
-	SessionInfo         *GuestSessionInfo       `json:"sessionInfo,omitempty"`
-	Stamp               interface{}             `json:"stamp,omitempty"`
-	Standalone          bool                    `json:"standalone"`
-	StateChronology     *StateChronology        `json:"stateChronology,omitempty"`
-	Tags                []string                `json:"tags,omitempty"`
-	TargetState         []string                `json:"targetState,omitempty"`
-	TemplateName        string                  `json:"templateName,omitempty"`
-	UserVolume          *UserVolume             `json:"userVolume,omitempty"`
-	Username            string                  `json:"username"`
-	UserSessionState    string                  `json:"userSessionState,omitempty"`
-	UserSession         *UserSession            `json:"userSession,omitempty"`
-	UUID                string                  `json:"uuid,omitempty"`
-	BrokerOptions       *GuestBrokerOptions     `json:"brokerOptions,omitempty"`
-	Secureboot          bool                    `json:"secureboot"`
-	Machine             string                  `json:"machine,omitempty"`
-	GuestType           string                  `json:"guestType,omitempty"`
+	Address             string              `json:"address,omitempty"`
+	ADGroup             string              `json:"ADGroup,omitempty"`
+	AgentInstalled      bool                `json:"agentInstalled"`
+	AgentVersion        string              `json:"agentVersion,omitempty"`
+	Backup              *GuestBackup        `json:"backup,omitempty"`
+	BrokerOptions       *GuestBrokerOptions `json:"brokerOptions,omitempty"`
+	Cpus                int                 `json:"cpus,omitempty"`
+	Currentmem          int                 `json:"currentmem,omitempty"`
+	Disks               []GuestDisk         `json:"disks,omitempty"`
+	DuplicateMitigation bool                `json:"duplicateMitigation"`
+	Error               *GuestError         `json:"error,omitempty"`
+	External            bool                `json:"external"`
+	Firmware            string              `json:"firmware,omitempty"`
+	DisablePortCheck    bool                `json:"disablePortCheck"`
+	Gateway             string              `json:"gateway,omitempty"`
+	GPU                 bool                `json:"gpu"`
+	GuestState          string              `json:"guestState,omitempty"`
+	GuestType           string              `json:"guestType,omitempty"`
+	HasBeenReady        bool                `json:"hasBeenReady,omitempty"`
+	Hostid              string              `json:"hostid,omitempty"`
+	HostDevices         []HostDevice        `json:"hostDevices,omitempty"`
+	Hostname            string              `json:"hostname,omitempty"`
+	Interfaces          []GuestNetwork      `json:"interfaces,omitempty"`
+	LastLoginDuration   int                 `json:"lastLoginDuration,omitempty"`
+	LastUserLoginTime   interface{}         `json:"lastUserLoginTime,omitempty"`
+	Machine             string              `json:"machine,omitempty"`
+	Memory              int                 `json:"memory,omitempty"`
+	MigrationProcessing bool                `json:"migrationProcessing"`
+	Name                string              `json:"name,omitempty"`
+	Os                  string              `json:"os,omitempty"`
+	Persistent          bool                `json:"persistent,omitempty"`
+	PoolID              string              `json:"poolId,omitempty"`
+	PreviousGuestState  string              `json:"previousGuestState,omitempty"`
+	ProfileID           string              `json:"profileId,omitempty"`
+	PublishedIP         string              `json:"publishedIp,omitempty"`
+	RdpUserInjected     bool                `json:"rdpUserInjected,omitempty"`
+	Realm               string              `json:"realm,omitempty"`
+	Secureboot          bool                `json:"secureboot"`
+	SessionInfo         *GuestSessionInfo   `json:"sessionInfo,omitempty"`
+	Stamp               interface{}         `json:"stamp,omitempty"`
+	Standalone          bool                `json:"standalone"`
+	Tags                []string            `json:"tags,omitempty"`
+	TargetState         []string            `json:"targetState,omitempty"`
+	TemplateName        string              `json:"templateName,omitempty"`
+	Tpm                 bool                `json:"tpm"`
+	Username            string              `json:"username"`
+	UserVolume          *UserVolume         `json:"userVolume,omitempty"`
+	UserSessionState    string              `json:"userSessionState,omitempty"`
+	UserSession         *UserSession        `json:"userSession,omitempty"`
+	UUID                string              `json:"uuid,omitempty"`
 }
 
 // GuestBrokerOptions allows configuring broker connection settings for a guest
@@ -115,15 +116,6 @@ type GuestError struct {
 	Message string `json:"message"`
 }
 
-// GuestAgentMetadata contains information fabout the hive agent on the guest
-type GuestAgentMetadata struct {
-	ActualVersion   string `json:"actualVersion"`
-	ExpectedVersion string `json:"expectedVersion"`
-	Installed       bool   `json:"installed"`
-	State           string `json:"state"`
-	UpdateStatus    string `json:"updateStatus"`
-}
-
 // GuestSessionInfo is struct for sessioninfo of user on VM
 type GuestSessionInfo struct {
 	SessionID              int    `json:"sessionId"`
@@ -153,15 +145,6 @@ type GuestBackup struct {
 	LastBackup      interface{} `json:"lastBackup,omitempty"`
 	StateMessage    string      `json:"stateMessage,omitempty"`
 	Backups         []string    `json:"backups,omitempty"`
-}
-
-type GuestMigrationMetadata struct {
-	SourceHostId        string `json:"sourceHostId"`
-	SourceHostname      string `json:"sourceHostname"`
-	DestinationHostId   string `json:"destinationHostId"`
-	DestinationHostname string `json:"destinationHostname"`
-	Progress            int    `json:"progress"`
-	MigratableXml       string `json:"migratableXml"`
 }
 
 type HostDevicePCI struct {
@@ -230,13 +213,6 @@ func (device HostDevice) MarshalJSON() ([]byte, error) {
 	default:
 		return nil, fmt.Errorf("unknown device type: %s", device.Type)
 	}
-}
-
-// StateChronology state tracking for the guest
-type StateChronology struct {
-	Current string `json:"current"`
-	Next    string `json:"next"`
-	Target  string `json:"target"`
 }
 
 // UserSession contains user session information for a guest

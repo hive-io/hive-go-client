@@ -62,8 +62,8 @@ type Gateway struct {
 // ClusterBackup data protection settings from the cluster table
 type ClusterBackup struct {
 	Enabled     bool   `json:"enabled"`
-	StartWindow string `json:"startWindow"`
-	EndWindow   string `json:"endWindow"`
+	StartWindow string `json:"startWindow,omitempty"`
+	EndWindow   string `json:"endWindow,omitempty"`
 }
 
 type ClusterSSO struct {
