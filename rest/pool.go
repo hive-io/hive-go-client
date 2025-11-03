@@ -89,6 +89,7 @@ type Pool struct {
 	Description               string            `json:"description,omitempty"`
 	GuestProfile              *PoolGuestProfile `json:"guestProfile,omitempty"`
 	InjectAgent               bool              `json:"injectAgent"`
+	InjectHostname            bool              `json:"injectHostname"`
 	Name                      string            `json:"name"`
 	PerformanceThreshold      int               `json:"performanceThreshold,omitempty"`
 	ProfileID                 string            `json:"profileId,omitempty"`
