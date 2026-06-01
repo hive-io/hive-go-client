@@ -360,7 +360,7 @@ func (host *Host) UploadSoftware(client *Client, filename string) error {
 
 // RestartNetworking calls restarts networking on the host
 func (host *Host) RestartNetworking(client *Client) error {
-	_, err := client.request("POST", "host/"+host.Hostid+"/networking/networking/restart", nil)
+	_, err := client.request("POST", "host/"+host.Hostid+"/networking/restart", nil)
 	return err
 }
 
@@ -613,4 +613,126 @@ func (host *Host) UpdateSriov(client *Client) (string, error) {
 		result = string(body)
 	}
 	return result, err
+}
+
+func (host *Host) SetCertificate(client *Client, cert string, key string, name string) (string, error) {
+	data := map[string]interface{}{"cert": cert, "key": key}
+	if name != "" {
+		data["name"] = name
+	}
+	jsonValue, err := json.Marshal(data)
+	if err != nil {
+		return "", err
+	}
+	body, err := client.request("POST", "host/"+host.Hostid+"/certificate", jsonValue)
+	if err != nil {
+		return "", err
+	}
+	return string(body), nil
+}
+
+func (host *Host) GetCertificate(client *Client, name string) (map[string]interface{}, error) {
+	path := "host/" + host.Hostid + "/certificate"
+	if name != "" {
+		path += "?name=" + url.QueryEscape(name)
+	}
+	body, err := client.request("GET", path, nil)
+	if err != nil {
+		return nil, err
+	}
+	var certInfo map[string]interface{}
+	err = json.Unmarshal(body, &certInfo)
+	return certInfo, err
+}
+
+func (host *Host) RequestACMECertificate(client *Client, domains []string, email string, certName string, server string) (string, error) {
+	if client.CheckHostVersion("9.0.0") != nil {
+		return "", errors.New("Host version must be 9.0.0 or greater")
+	}
+	data := map[string]interface{}{
+		"domains":  domains,
+		"email":    email,
+		"certName": certName,
+		"server":   server,
+	}
+	jsonValue, err := json.Marshal(data)
+	if err != nil {
+		return "", err
+	}
+	body, err := client.request("POST", "host/"+host.Hostid+"/acme/request", jsonValue)
+	if err != nil {
+		return "", err
+	}
+	return string(body), nil
+}
+
+func (host *Host) RenewACMECertificate(client *Client, certName string, domain string, server string, forceRenew bool) (string, error) {
+	if client.CheckHostVersion("9.0.0") != nil {
+		return "", errors.New("Host version must be 9.0.0 or greater")
+	}
+	data := map[string]interface{}{
+		"certName":   certName,
+		"domain":     domain,
+		"server":     server,
+		"forceRenew": forceRenew,
+	}
+	jsonValue, err := json.Marshal(data)
+	if err != nil {
+		return "", err
+	}
+	body, err := client.request("POST", "host/"+host.Hostid+"/acme/renew", jsonValue)
+	if err != nil {
+		return "", err
+	}
+	return string(body), nil
+}
+
+func (host *Host) RevokeACMECertificate(client *Client, certName string, certPath string, server string, reason string, deleteAfterRevoke bool) (string, error) {
+	if client.CheckHostVersion("9.0.0") != nil {
+		return "", errors.New("Host version must be 9.0.0 or greater")
+	}
+	data := map[string]interface{}{
+		"certName":          certName,
+		"certPath":          certPath,
+		"server":            server,
+		"reason":            reason,
+		"deleteAfterRevoke": deleteAfterRevoke,
+	}
+	jsonValue, err := json.Marshal(data)
+	if err != nil {
+		return "", err
+	}
+	body, err := client.request("POST", "host/"+host.Hostid+"/acme/revoke", jsonValue)
+	if err != nil {
+		return "", err
+	}
+	return string(body), nil
+}
+
+func (host *Host) GetACMECertificate(client *Client, certName string) (map[string]interface{}, error) {
+	if client.CheckHostVersion("9.0.0") != nil {
+		return nil, errors.New("Host version must be 9.0.0 or greater")
+	}
+	path := "host/" + host.Hostid + "/acme/certificate/" + url.PathEscape(certName)
+	body, err := client.request("GET", path, nil)
+	if err != nil {
+		return nil, err
+	}
+	var status map[string]interface{}
+	err = json.Unmarshal(body, &status)
+	return status, err
+}
+
+func (host *Host) ListACMECertificates(client *Client) ([]string, error) {
+	if client.CheckHostVersion("9.0.0") != nil {
+		return nil, errors.New("Host version must be 9.0.0 or greater")
+	}
+	path := "host/" + host.Hostid + "/acme/certificates"
+	body, err := client.request("GET", path, nil)
+	if err != nil {
+		return nil, err
+	}
+	var certificates []string
+	err = json.Unmarshal(body, &certificates)
+	return certificates, err
 }

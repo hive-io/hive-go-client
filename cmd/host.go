@@ -626,6 +626,134 @@ var hostUpdateSriov = &cobra.Command{
 	},
 }
 
+var hostUploadCertificateCmd = &cobra.Command{
+	Use:   "upload-certificate",
+	Short: "Upload a certificate to the host",
+	PreRun: func(cmd *cobra.Command, args []string) {
+		bindHostIDFlags(cmd, args)
+		viper.BindPFlag("certificate", cmd.Flags().Lookup("certificate"))
+		viper.BindPFlag("key", cmd.Flags().Lookup("key"))
+		viper.BindPFlag("name", cmd.Flags().Lookup("name"))
+		cmd.MarkFlagRequired("certificate")
+		cmd.MarkFlagRequired("key")
+	},
+	Run: func(cmd *cobra.Command, args []string) {
+		// Implementation for uploading a certificate would go here
+		host, err := getHost(cmd, args)
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+		certData, err := os.ReadFile(viper.GetString("certificate"))
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+		keyData, err := os.ReadFile(viper.GetString("key"))
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+		_, err = host.SetCertificate(restClient, string(certData), string(keyData), viper.GetString("name"))
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+	},
+}
+
+var hostGetCertificateCmd = &cobra.Command{
+	Use:   "get-certificate",
+	Short: "Get the certificate information from the host",
+	PreRun: func(cmd *cobra.Command, args []string) {
+		bindHostIDFlags(cmd, args)
+		viper.BindPFlag("certificate-name", cmd.Flags().Lookup("certificate-name"))
+	},
+	Run: func(cmd *cobra.Command, args []string) {
+		host, err := getHost(cmd, args)
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+		certInfo, err := host.GetCertificate(restClient, viper.GetString("certificate-name"))
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+		fmt.Println(formatString(certInfo))
+	},
+}
+
+var hostRequestAcmeCertificateCmd = &cobra.Command{
+	Use:   "request-acme-certificate",
+	Short: "Request a certificate from an ACME server",
+	PreRun: func(cmd *cobra.Command, args []string) {
+		bindHostIDFlags(cmd, args)
+		viper.BindPFlag("domain", cmd.Flags().Lookup("domain"))
+		viper.BindPFlag("email", cmd.Flags().Lookup("email"))
+		viper.BindPFlag("certificate-name", cmd.Flags().Lookup("certificate-name"))
+		viper.BindPFlag("acme-server", cmd.Flags().Lookup("acme-server"))
+		cmd.MarkFlagRequired("domain")
+		cmd.MarkFlagRequired("email")
+	},
+	Run: func(cmd *cobra.Command, args []string) {
+		host, err := getHost(cmd, args)
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+		certInfo, err := host.RequestACMECertificate(restClient, viper.GetStringSlice("domain"), viper.GetString("email"), viper.GetString("certificate-name"), viper.GetString("acme-server"))
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+		fmt.Println(formatString(certInfo))
+	},
+}
+
+var hostListAcmeCertificatesCmd = &cobra.Command{
+	Use:   "list-acme-certificates",
+	Short: "List ACME certificates on the host",
+	PreRun: func(cmd *cobra.Command, args []string) {
+		bindHostIDFlags(cmd, args)
+	},
+	Run: func(cmd *cobra.Command, args []string) {
+		host, err := getHost(cmd, args)
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+		certificates, err := host.ListACMECertificates(restClient)
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+		fmt.Println(formatString(certificates))
+	},
+}
+
+var hostGetAcmeCertificateCmd = &cobra.Command{
+	Use:   "get-acme-certificate [name]",
+	Short: "Get the ACME certificate information from the host",
+	PreRun: func(cmd *cobra.Command, args []string) {
+		bindHostIDFlags(cmd, args)
+	},
+	Args: cobra.ExactArgs(1),
+	Run: func(cmd *cobra.Command, args []string) {
+		host, err := getHost(cmd, args)
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+		certInfo, err := host.GetACMECertificate(restClient, args[0])
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+		fmt.Println(formatString(certInfo))
+	},
+}
+
 func init() {
 	RootCmd.AddCommand(hostCmd)
 	hostCmd.AddCommand(hostInfoCmd)
@@ -693,4 +821,25 @@ func init() {
 	addHostIDFlags(hostUpdateGpu)
 	hostCmd.AddCommand(hostUpdateSriov)
 	addHostIDFlags(hostUpdateSriov)
+
+	hostCmd.AddCommand(hostUploadCertificateCmd)
+	addHostIDFlags(hostUploadCertificateCmd)
+	hostUploadCertificateCmd.Flags().String("certificate", "", "path to certificate file")
+	hostUploadCertificateCmd.Flags().String("key", "", "path to key file")
+	hostUploadCertificateCmd.Flags().String("certificate-name", "hio", "name of the certificate to upload")
+
+	hostCmd.AddCommand(hostGetCertificateCmd)
+	addHostIDFlags(hostGetCertificateCmd)
+	hostGetCertificateCmd.Flags().String("certificate-name", "hio", "name of the certificate to retrieve")
+	hostCmd.AddCommand(hostRequestAcmeCertificateCmd)
+	addHostIDFlags(hostRequestAcmeCertificateCmd)
+	hostRequestAcmeCertificateCmd.Flags().StringSlice("domain", []string{}, "domain name for the certificate")
+	hostRequestAcmeCertificateCmd.Flags().String("email", "", "email address for ACME registration")
+	hostRequestAcmeCertificateCmd.Flags().String("certificate-name", "hio", "name of the certificate to create")
+	hostRequestAcmeCertificateCmd.Flags().String("acme-server", "", "ACME server URL (optional)")
+
+	hostCmd.AddCommand(hostGetAcmeCertificateCmd)
+	addHostIDFlags(hostGetAcmeCertificateCmd)
+	hostCmd.AddCommand(hostListAcmeCertificatesCmd)
+	addHostIDFlags(hostListAcmeCertificatesCmd)
 }
