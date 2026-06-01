@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"strings"
 
 	"github.com/eventials/go-tus"
 )
@@ -76,24 +77,60 @@ func (client *Client) ListStoragePools(query string) ([]StoragePool, error) {
 	return pools, err
 }
 
-// GetStoragePoolByName requests a storage pool by name
-func (client *Client) GetStoragePoolByName(name string) (*StoragePool, error) {
-	if name == "disk" {
-		return &StoragePool{
+func (client *Client) localStoragePools() []StoragePool {
+	pools := []StoragePool{
+		{
 			ID:   "disk",
 			Name: "disk",
 			Type: "disk",
 			Path: "/zdata",
-		}, nil
-	}
-	if name == "ram" {
-		return &StoragePool{
+		},
+		{
 			ID:   "ram",
 			Name: "ram",
 			Type: "ram",
 			Path: "/zram",
-		}, nil
+		},
 	}
+	if err := client.CheckHostVersion("8.6.3"); err != nil {
+		return pools
+	}
+	hosts, err := client.ListHosts("")
+	if err != nil {
+		return pools
+	}
+	for _, host := range hosts {
+		pools = append(pools, StoragePool{
+			ID:    "disk-" + host.Hostid,
+			Name:  "disk-" + host.Hostname,
+			Type:  "disk",
+			Path:  "/zdata",
+			Hosts: []string{host.Hostid},
+		})
+		if host.Storage.RAM.RamdiskPercent > 0 {
+			pools = append(pools, StoragePool{
+				ID:    "ram-" + host.Hostid,
+				Name:  "ram-" + host.Hostname,
+				Type:  "ram",
+				Path:  "/zram",
+				Hosts: []string{host.Hostid},
+			})
+		}
+	}
+	return pools
+}
+
+// GetStoragePoolByName requests a storage pool by name
+func (client *Client) GetStoragePoolByName(name string) (*StoragePool, error) {
+	if strings.HasPrefix(name, "disk") || strings.HasPrefix(name, "ram") {
+		localSPs := client.localStoragePools()
+		for _, sp := range localSPs {
+			if sp.Name == name {
+				return &sp, nil
+			}
+		}
+	}
+
 	var pools, err = client.ListStoragePools("name=" + url.PathEscape(name))
 	if err != nil {
 		return nil, err
@@ -108,21 +145,13 @@ func (client *Client) GetStoragePoolByName(name string) (*StoragePool, error) {
 
 // GetStoragePool requests a storage pool by id
 func (client *Client) GetStoragePool(id string) (*StoragePool, error) {
-	if id == "disk" {
-		return &StoragePool{
-			ID:   "disk",
-			Name: "disk",
-			Type: "disk",
-			Path: "/zdata",
-		}, nil
-	}
-	if id == "ram" {
-		return &StoragePool{
-			ID:   "ram",
-			Name: "ram",
-			Type: "ram",
-			Path: "/zram",
-		}, nil
+	if strings.HasPrefix(id, "disk") || strings.HasPrefix(id, "ram") {
+		localSPs := client.localStoragePools()
+		for _, sp := range localSPs {
+			if sp.ID == id {
+				return &sp, nil
+			}
+		}
 	}
 	pool := &StoragePool{}
 	if id == "" {
