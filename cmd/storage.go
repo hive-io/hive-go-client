@@ -447,6 +447,22 @@ var storageListCmd = &cobra.Command{
 	},
 }
 
+var storageInfoCmd = &cobra.Command{
+	Use:   "info",
+	Short: "get storage pool information",
+	// PreRun: func(cmd *cobra.Command, args []string) {
+	// 	bindListFlags(cmd)
+	// },
+	Run: func(cmd *cobra.Command, args []string) {
+		pools, err := restClient.StoragePoolsInfo()
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+		fmt.Println(formatString(pools))
+	},
+}
+
 var storageMoveFileCmd = &cobra.Command{
 	Use:   "move-file",
 	Short: "move a storage pool file",
@@ -508,6 +524,8 @@ func init() {
 	storageCmd.AddCommand(storageListCmd)
 	addListFlags(storageListCmd)
 
+	storageCmd.AddCommand(storageInfoCmd)
+
 	storageCmd.AddCommand(storageStopCmd)
 	initIDFlags(storageStopCmd)
 	storageCmd.AddCommand(storageStartCmd)
@@ -521,7 +539,7 @@ func init() {
 
 	storageCmd.AddCommand(storageDownloadCmd)
 	storageDownloadCmd.Flags().StringP("output", "o", "", "output file")
-	storageDownloadCmd.Flags().Bool("progress-bar", false, "show a progress bar with --wait")
+	storageDownloadCmd.Flags().Bool("progress-bar", false, "show a progress bar with")
 	initIDFlags(storageDownloadCmd)
 
 	storageCmd.AddCommand(storageConvertDiskCmd)

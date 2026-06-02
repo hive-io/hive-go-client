@@ -77,6 +77,30 @@ func (client *Client) ListStoragePools(query string) ([]StoragePool, error) {
 	return pools, err
 }
 
+type StoragePoolInfo struct {
+	StoragePool
+	Info struct {
+		State     string `json:"state"`
+		Total     uint64 `json:"total"`
+		Used      uint64 `json:"used"`
+		Available uint64 `json:"available"`
+	} `json:"info"`
+}
+
+func (client *Client) StoragePoolsInfo() ([]StoragePoolInfo, error) {
+	var poolInfo []StoragePoolInfo
+	body, err := client.request("GET", "storage/pools/info", nil)
+	if err != nil {
+		return nil, err
+	}
+	fmt.Printf("StoragePoolsInfo response: %s", string(body))
+	err = json.Unmarshal(body, &poolInfo)
+	if err != nil {
+		return nil, err
+	}
+	return poolInfo, nil
+}
+
 func (client *Client) localStoragePools() []StoragePool {
 	pools := []StoragePool{
 		{
