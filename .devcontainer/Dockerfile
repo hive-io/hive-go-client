@@ -1,7 +1,7 @@
-FROM ubuntu:18.04
+FROM ubuntu:22.04
 
 ENV DEBIAN_FRONTEND=noninteractive
-LABEL Name=hive-go-client Version=0.0.1
+LABEL Name=hive-go-client Version=8.6.0
 RUN apt-get update \
     && apt -y upgrade \
     && apt -y install \
@@ -21,18 +21,11 @@ RUN apt-get update \
               whois \
               libudev-dev \
               libpam0g-dev \
-              golang-any \
-              python-dev \
     && add-apt-repository ppa:hio/appliance \
-    && add-apt-repository ppa:longsleep/golang-backports \
-    && add-apt-repository ppa:git-core/ppa \                                                  
+    && add-apt-repository ppa:longsleep/golang-backports \                                                  
     && apt-get update \
     && apt-get -y install \
                   git \
-                  subversion \
-                  libvirt-daemon-system \
-                  libvirt-dev libsystemd-dev \
-                  libvirt-dbus \
                   debhelper \
                   devscripts \
                   openssl \
