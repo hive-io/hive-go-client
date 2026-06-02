@@ -1,9 +1,12 @@
 package rest
 
 import (
+	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http"
 	"net/url"
 	"path"
 )
@@ -735,4 +738,73 @@ func (host *Host) ListACMECertificates(client *Client) ([]string, error) {
 	var certificates []string
 	err = json.Unmarshal(body, &certificates)
 	return certificates, err
+}
+
+// SupportFileStat contains file statistics for a support file
+type SupportFileStat struct {
+	Dev       int         `json:"dev"`
+	Mode      int         `json:"mode"`
+	Nlink     int         `json:"nlink"`
+	UID       int         `json:"uid"`
+	GID       int         `json:"gid"`
+	Rdev      int         `json:"rdev"`
+	Blksize   int         `json:"blksize"`
+	Ino       int         `json:"ino"`
+	Size      int         `json:"size"`
+	Blocks    int         `json:"blocks"`
+	Atime     interface{} `json:"atime"`
+	Mtime     interface{} `json:"mtime"`
+	Ctime     interface{} `json:"ctime"`
+	Birthtime interface{} `json:"birthtime"`
+}
+
+// SupportFile contains information about a support file on the host
+type SupportFile struct {
+	FileName string          `json:"fileName"`
+	Stat     SupportFileStat `json:"stat"`
+}
+
+// ListSupportFiles lists all support files on the host
+func (host *Host) ListSupportFiles(client *Client) ([]SupportFile, error) {
+	body, err := client.request("GET", "host/"+host.Hostid+"/supportfiles", nil)
+	if err != nil {
+		return nil, err
+	}
+	var files []SupportFile
+	err = json.Unmarshal(body, &files)
+	return files, err
+}
+
+// GenerateSupportFile generates a support file on the host.
+// Set dumpDB to true to include a database dump in the support file.
+func (host *Host) GenerateSupportFile(client *Client, dumpDB bool) (*Task, error) {
+	data := map[string]interface{}{"dumpDB": dumpDB}
+
+	//work around a bug in the schema
+	//if client.CheckHostVersion("8.6.3") != nil {
+	data["hostid"] = host.Hostid
+	//}
+	jsonValue, err := json.Marshal(data)
+	if err != nil {
+		return nil, err
+	}
+	fmt.Printf("Requesting support file generation with dumpDB=%v for host %s\n", dumpDB, host.Hostid)
+	return client.getTaskFromResponse(client.request("POST", "host/"+host.Hostid+"/supportfiles", jsonValue))
+}
+
+// DownloadSupportFile downloads a named support file from the host
+func (host *Host) DownloadSupportFile(client *Client, name string) (*http.Response, error) {
+	return host.DownloadSupportFileWithContext(context.Background(), client, name)
+}
+
+// DownloadSupportFileWithContext downloads a named support file from the host with context
+func (host *Host) DownloadSupportFileWithContext(ctx context.Context, client *Client, name string) (*http.Response, error) {
+	headers := map[string]string{"Content-type": "application/json"}
+	return client.requestWithHeaders(ctx, "GET", "host/"+host.Hostid+"/supportfile/"+url.PathEscape(name), bytes.NewBuffer(nil), headers, 0)
+}
+
+// DeleteSupportFile deletes a named support file from the host
+func (host *Host) DeleteSupportFile(client *Client, name string) error {
+	_, err := client.request("DELETE", "host/"+host.Hostid+"/supportfile/"+url.PathEscape(name), nil)
+	return err
 }

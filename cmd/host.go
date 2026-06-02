@@ -4,9 +4,11 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path"
 	"strings"
 
 	"github.com/hive-io/hive-go-client/rest"
+	"github.com/schollz/progressbar/v3"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -754,6 +756,113 @@ var hostGetAcmeCertificateCmd = &cobra.Command{
 	},
 }
 
+var hostListSupportFilesCmd = &cobra.Command{
+	Use:    "list-support-files {-i hostid | -n hostname | --ip ip_address | hostid}",
+	Short:  "list support files on a host",
+	PreRun: bindHostIDFlags,
+	Run: func(cmd *cobra.Command, args []string) {
+		host, err := getHost(cmd, args)
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+		files, err := host.ListSupportFiles(restClient)
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+		fmt.Println(formatString(files))
+	},
+}
+
+var hostGenerateSupportFileCmd = &cobra.Command{
+	Use:   "generate-support-file {-i hostid | -n hostname | --ip ip_address | hostid}",
+	Short: "generate a support file on a host",
+	PreRun: func(cmd *cobra.Command, args []string) {
+		bindHostIDFlags(cmd, args)
+		viper.BindPFlag("dump-db", cmd.Flags().Lookup("dump-db"))
+		bindTaskFlags(cmd)
+	},
+	Run: func(cmd *cobra.Command, args []string) {
+		host, err := getHost(cmd, args)
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+		handleTask(host.GenerateSupportFile(restClient, viper.GetBool("dump-db")))
+	},
+}
+
+var hostDownloadSupportFileCmd = &cobra.Command{
+	Use:   "download-support-file {-i hostid | -n hostname | --ip ip_address | hostid} [name]",
+	Short: "download a support file from a host",
+	Args:  cobra.ExactArgs(1),
+	PreRun: func(cmd *cobra.Command, args []string) {
+		bindHostIDFlags(cmd, args)
+		viper.BindPFlag("output", cmd.Flags().Lookup("output"))
+		viper.BindPFlag("progress-bar", cmd.Flags().Lookup("progress-bar"))
+	},
+	Run: func(cmd *cobra.Command, args []string) {
+		host, err := getHost(cmd, args)
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+		resp, err := host.DownloadSupportFile(restClient, args[0])
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+		defer resp.Body.Close()
+
+		var out *os.File
+		switch output := viper.GetString("output"); output {
+		case "-":
+			out = os.Stdout
+		case "":
+			out, err = os.Create(path.Base(args[0]))
+		default:
+			out, err = os.Create(output)
+		}
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+		defer out.Close()
+
+		if viper.GetBool("progress-bar") && viper.GetString("output") != "-" {
+			bar := progressbar.DefaultBytes(resp.ContentLength, "downloading")
+			io.Copy(io.MultiWriter(out, bar), resp.Body)
+			fmt.Println("")
+		} else {
+			_, err = io.Copy(out, resp.Body)
+		}
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+	},
+}
+
+var hostDeleteSupportFileCmd = &cobra.Command{
+	Use:    "delete-support-file {-i hostid | -n hostname | --ip ip_address | hostid} [name]",
+	Short:  "delete a support file from a host",
+	Args:   cobra.ExactArgs(1),
+	PreRun: bindHostIDFlags,
+	Run: func(cmd *cobra.Command, args []string) {
+		host, err := getHost(cmd, args)
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+		err = host.DeleteSupportFile(restClient, args[0])
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+	},
+}
+
 func init() {
 	RootCmd.AddCommand(hostCmd)
 	hostCmd.AddCommand(hostInfoCmd)
@@ -842,4 +951,20 @@ func init() {
 	addHostIDFlags(hostGetAcmeCertificateCmd)
 	hostCmd.AddCommand(hostListAcmeCertificatesCmd)
 	addHostIDFlags(hostListAcmeCertificatesCmd)
+
+	hostCmd.AddCommand(hostListSupportFilesCmd)
+	addHostIDFlags(hostListSupportFilesCmd)
+
+	hostCmd.AddCommand(hostGenerateSupportFileCmd)
+	addHostIDFlags(hostGenerateSupportFileCmd)
+	hostGenerateSupportFileCmd.Flags().Bool("dump-db", false, "include a database dump in the support file")
+	addTaskFlags(hostGenerateSupportFileCmd)
+
+	hostCmd.AddCommand(hostDownloadSupportFileCmd)
+	addHostIDFlags(hostDownloadSupportFileCmd)
+	hostDownloadSupportFileCmd.Flags().StringP("output", "o", "", "output file (default: filename from server, use - for stdout)")
+	hostDownloadSupportFileCmd.Flags().Bool("progress-bar", false, "show a progress bar during download")
+
+	hostCmd.AddCommand(hostDeleteSupportFileCmd)
+	addHostIDFlags(hostDeleteSupportFileCmd)
 }
