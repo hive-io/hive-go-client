@@ -50,6 +50,7 @@ type Guest struct {
 	Realm               string              `json:"realm,omitempty"`
 	Secureboot          bool                `json:"secureboot"`
 	SessionInfo         *GuestSessionInfo   `json:"sessionInfo,omitempty"`
+	Snapshots           []GuestSnapshot     `json:"snapshots,omitempty"`
 	Stamp               interface{}         `json:"stamp,omitempty"`
 	Standalone          bool                `json:"standalone"`
 	Tags                []string            `json:"tags,omitempty"`

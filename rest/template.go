@@ -46,6 +46,7 @@ type Template struct {
 	Secureboot         bool                   `json:"secureboot"`
 	Machine            string                 `json:"machine,omitempty"`
 	TargetPoolTypes    []string               `json:"targetPoolTypes,omitempty"`
+	Tags               []string               `json:"tags,omitempty"`
 }
 
 func (template Template) String() string {
@@ -161,7 +162,15 @@ func (template *Template) ExitAuthoring(client *Client) error {
 	if template.Name == "" {
 		return errors.New("name cannot be empty")
 	}
-	_, err := client.request("PUT", "template/"+url.PathEscape(template.Name)+"/exitauthoring", nil)
+	_, err := client.request("PUT", "template/"+url.PathEscape(template.Name)+"/exitauthor", nil)
+	return err
+}
+
+func (template *Template) ClearStagingState(client *Client) error {
+	if template.Name == "" {
+		return errors.New("name cannot be empty")
+	}
+	_, err := client.request("POST", "template/"+url.PathEscape(template.Name)+"/clearstagingstate", nil)
 	return err
 }
 

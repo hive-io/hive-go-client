@@ -79,6 +79,7 @@ type ClusterSSO struct {
 type Cluster struct {
 	AdminPassword string   `json:"adminPassword"`
 	Broker        *Broker  `json:"broker"`
+	Description   string   `json:"description"`
 	Gateway       *Gateway `json:"gateway"`
 	HiveSense     struct {
 		AwsAccessKeyID     string `json:"awsAccessKeyId,omitempty"`
