@@ -316,6 +316,64 @@ var poolMergeCmd = &cobra.Command{
 	},
 }
 
+var poolEnableCmd = &cobra.Command{
+	Use:   "enable",
+	Short: "enable a pool",
+	Run: func(cmd *cobra.Command, args []string) {
+		var pool *rest.Pool
+		var err error
+		switch {
+		case cmd.Flags().Changed("id"):
+			id, _ := cmd.Flags().GetString("id")
+			pool, err = restClient.GetPool(id)
+		case cmd.Flags().Changed("name"):
+			name, _ := cmd.Flags().GetString("name")
+			pool, err = restClient.GetPoolByName(name)
+		default:
+			cmd.Usage()
+			os.Exit(1)
+		}
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+		err = pool.ToggleState(restClient, true)
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+	},
+}
+
+var poolDisableCmd = &cobra.Command{
+	Use:   "disable",
+	Short: "disable a pool",
+	Run: func(cmd *cobra.Command, args []string) {
+		var pool *rest.Pool
+		var err error
+		switch {
+		case cmd.Flags().Changed("id"):
+			id, _ := cmd.Flags().GetString("id")
+			pool, err = restClient.GetPool(id)
+		case cmd.Flags().Changed("name"):
+			name, _ := cmd.Flags().GetString("name")
+			pool, err = restClient.GetPoolByName(name)
+		default:
+			cmd.Usage()
+			os.Exit(1)
+		}
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+		err = pool.ToggleState(restClient, false)
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+	},
+}
+
 func init() {
 	RootCmd.AddCommand(poolCmd)
 	poolCmd.AddCommand(poolCreateCmd)
@@ -353,4 +411,12 @@ func init() {
 	poolCmd.AddCommand(poolMergeCmd)
 	poolMergeCmd.Flags().StringP("id", "i", "", "pool pool Id")
 	poolMergeCmd.Flags().StringP("name", "n", "", "pool pool Name")
+
+	poolCmd.AddCommand(poolEnableCmd)
+	poolEnableCmd.Flags().StringP("id", "i", "", "pool Id")
+	poolEnableCmd.Flags().StringP("name", "n", "", "pool Name")
+
+	poolCmd.AddCommand(poolDisableCmd)
+	poolDisableCmd.Flags().StringP("id", "i", "", "pool Id")
+	poolDisableCmd.Flags().StringP("name", "n", "", "pool Name")
 }

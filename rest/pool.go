@@ -281,3 +281,17 @@ func (pool *Pool) Merge(client *Client) error {
 	_, err := client.request("POST", "pool/"+pool.ID+"/merge", nil)
 	return err
 }
+
+// ToggleState enables or disables a pool
+func (pool *Pool) ToggleState(client *Client, enable bool) error {
+	if pool.ID == "" || client == nil {
+		return errors.New("invalid pool")
+	}
+	data := map[string]bool{"enable": enable}
+	jsonValue, err := json.Marshal(data)
+	if err != nil {
+		return err
+	}
+	_, err = client.request("PUT", "pool/"+pool.ID+"/toggleState", jsonValue)
+	return err
+}
