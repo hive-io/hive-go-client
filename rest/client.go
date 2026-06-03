@@ -171,6 +171,22 @@ func (client *Client) Login(username, password, realm string) error {
 	return err
 }
 
+type UserInfo struct {
+	Username string `json:"username"`
+	Realm    string `json:"realm"`
+	Role     string `json:"role"`
+}
+
+func (client *Client) User() (UserInfo, error) {
+	var userInfo UserInfo
+	body, err := client.request("GET", "auth/me", nil)
+	if err != nil {
+		return userInfo, err
+	}
+	err = json.Unmarshal(body, &userInfo)
+	return userInfo, err
+}
+
 // ChangeFeed wrapper around a websocket to monitor database changes
 type ChangeFeed struct {
 	Data chan ChangeFeedMessage
