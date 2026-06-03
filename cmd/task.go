@@ -233,12 +233,13 @@ func taskProgressBar(task *rest.Task) error {
 		select {
 		case newVal = <-taskData:
 			bar.Set(int(newVal.Progress))
-			if newVal.State == "completed" {
+			switch newVal.State {
+			case "completed":
 				bar.Set(100)
 				bar.Finish()
 				fmt.Println("")
 				return nil
-			} else if newVal.State == "failed" {
+			case "failed":
 				bar.Set(0)
 				return fmt.Errorf("%s", formatString("Task Failed: "+newVal.Message))
 			}

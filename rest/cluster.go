@@ -216,6 +216,24 @@ func (cluster *Cluster) DisableSharedStorage(client *Client) (*Task, error) {
 	return client.getTaskFromResponse(client.request("POST", "cluster/"+cluster.ID+"/disableSharedStorage", nil))
 }
 
+// RestartSharedStorage restarts the shared storage service across the cluster. This is typically used after a failure of the shared storage service to attempt to bring it back up.
+func (cluster *Cluster) RestartSharedStorage(client *Client) error {
+	_, err := client.request("POST", "cluster/"+cluster.ID+"/restartSharedStorage", nil)
+	return err
+}
+
+// EnableHiveSense enable HiveSense for the cluster
+func (cluster *Cluster) EnableHiveSense(client *Client) error {
+	_, err := client.request("POST", "cluster/"+cluster.ID+"/enableHiveSense", nil)
+	return err
+}
+
+// DisableHiveSense disable HiveSense for the cluster
+func (cluster *Cluster) DisableHiveSense(client *Client) error {
+	_, err := client.request("POST", "cluster/"+cluster.ID+"/disableHiveSense", nil)
+	return err
+}
+
 // GetBroker returns the broker settings for the cluster
 func (client *Client) GetBroker(clusterID string) (Broker, error) {
 	var broker Broker
@@ -321,4 +339,83 @@ func (cluster Cluster) SSOInfo(client *Client) (ClusterSSO, error) {
 	}
 	err = json.Unmarshal(body, &sso)
 	return sso, err
+}
+
+type ClusterStatus struct {
+	Clustered     bool `json:"clustered"`
+	ActiveMembers int  `json:"activeMembers"`
+}
+
+func (cluster Cluster) Status(client *Client) (ClusterStatus, error) {
+	var status ClusterStatus
+	body, err := client.request("GET", "cluster/"+cluster.ID+"/status", nil)
+	if err != nil {
+		return status, err
+	}
+	err = json.Unmarshal(body, &status)
+	return status, err
+}
+
+func (cluster Cluster) UsersByResource(client *Client) (map[string]any, error) {
+	var usersByResource map[string]any
+	body, err := client.request("GET", "cluster/"+cluster.ID+"/usersByResource", nil)
+	if err != nil {
+		return usersByResource, err
+	}
+	err = json.Unmarshal(body, &usersByResource)
+	return usersByResource, err
+}
+
+func (cluster Cluster) Rename(client *Client, newName string) error {
+	jsonData := map[string]string{"name": newName}
+	jsonValue, err := json.Marshal(jsonData)
+	if err != nil {
+		return err
+	}
+	_, err = client.request("POST", "cluster/"+cluster.ID+"/rename", jsonValue)
+	return err
+}
+
+type ClusterMember struct {
+	Density  int      `json:"density"`
+	HostID   string   `json:"hostId"`
+	Hostname string   `json:"hostname"`
+	IPs      []string `json:"ips"`
+	RdbId    string   `json:"rdbId"`
+}
+
+func (cluster Cluster) Members(client *Client) ([]ClusterMember, error) {
+	var members []ClusterMember
+	body, err := client.request("GET", "cluster/"+cluster.ID+"/members", nil)
+	if err != nil {
+		return members, err
+	}
+	err = json.Unmarshal(body, &members)
+	return members, err
+}
+
+type ClusterHostInfo struct {
+	IP       string `json:"ip"`
+	Role     string `json:"role"`
+	Hostname string `json:"hostname"`
+}
+
+type ClusterInfo struct {
+	ID       string                     `json:"id"`
+	Hostname string                     `json:"hostname"`
+	Role     string                     `json:"role"`
+	Version  string                     `json:"version,omitempty"`
+	IP       string                     `json:"ip"`
+	Tags     []string                   `json:"tags,omitempty"`
+	Hosts    map[string]ClusterHostInfo `json:"hosts,omitempty"`
+}
+
+func (client *Client) LocalClusterInfo(clusterID string) (ClusterInfo, error) {
+	var info ClusterInfo
+	body, err := client.request("GET", "cluster/"+clusterID+"/localClusterInfo", nil)
+	if err != nil {
+		return info, err
+	}
+	err = json.Unmarshal(body, &info)
+	return info, err
 }

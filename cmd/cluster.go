@@ -80,12 +80,7 @@ var setLicenseCmd = &cobra.Command{
 	Short: "add a license for the cluster",
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		clusterID, err := restClient.ClusterID()
-		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
-		}
-		cluster, err := restClient.GetCluster(clusterID)
+		cluster, err := getCluster(cmd, args)
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)
@@ -106,12 +101,7 @@ var enableBackupCmd = &cobra.Command{
 		viper.BindPFlag("end-window", cmd.Flags().Lookup("end-window"))
 	},
 	Run: func(cmd *cobra.Command, args []string) {
-		clusterID, err := restClient.ClusterID()
-		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
-		}
-		cluster, err := restClient.GetCluster(clusterID)
+		cluster, err := getCluster(cmd, args)
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)
@@ -128,12 +118,7 @@ var disableBackupCmd = &cobra.Command{
 	Use:   "disable-backup",
 	Short: "Disable Backup",
 	Run: func(cmd *cobra.Command, args []string) {
-		clusterID, err := restClient.ClusterID()
-		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
-		}
-		cluster, err := restClient.GetCluster(clusterID)
+		cluster, err := getCluster(cmd, args)
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)
@@ -155,12 +140,7 @@ var enableSharedStorageCmd = &cobra.Command{
 		bindTaskFlags(cmd)
 	},
 	Run: func(cmd *cobra.Command, args []string) {
-		clusterID, err := restClient.ClusterID()
-		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
-		}
-		cluster, err := restClient.GetCluster(clusterID)
+		cluster, err := getCluster(cmd, args)
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)
@@ -176,17 +156,63 @@ var disableSharedStorageCmd = &cobra.Command{
 		bindTaskFlags(cmd)
 	},
 	Run: func(cmd *cobra.Command, args []string) {
-		clusterID, err := restClient.ClusterID()
-		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
-		}
-		cluster, err := restClient.GetCluster(clusterID)
+		cluster, err := getCluster(cmd, args)
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)
 		}
 		handleTask(cluster.DisableSharedStorage(restClient))
+	},
+}
+
+var restartSharedStorageCmd = &cobra.Command{
+	Use:   "restart-shared-storage",
+	Short: "Restarts the hive-storage service across the cluster",
+	Run: func(cmd *cobra.Command, args []string) {
+		cluster, err := getCluster(cmd, args)
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+		err = cluster.RestartSharedStorage(restClient)
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+	},
+}
+
+var enableHiveSenseCmd = &cobra.Command{
+	Use:   "enable-hivesense",
+	Short: "Enable HiveSense",
+	Run: func(cmd *cobra.Command, args []string) {
+		cluster, err := getCluster(cmd, args)
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+		err = cluster.EnableHiveSense(restClient)
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+	},
+}
+
+var disableHiveSenseCmd = &cobra.Command{
+	Use:   "disable-hivesense",
+	Short: "Disable HiveSense",
+	Run: func(cmd *cobra.Command, args []string) {
+		cluster, err := getCluster(cmd, args)
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+		err = cluster.DisableHiveSense(restClient)
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
 	},
 }
 
@@ -326,12 +352,7 @@ var clusterUpdateSoftwareCmd = &cobra.Command{
 		bindTaskFlags(cmd)
 	},
 	Run: func(cmd *cobra.Command, args []string) {
-		clusterID, err := restClient.ClusterID()
-		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
-		}
-		cluster, err := restClient.GetCluster(clusterID)
+		cluster, err := getCluster(cmd, args)
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)
@@ -368,12 +389,7 @@ var clusterEmailAlertsCmd = &cobra.Command{
 			fmt.Println(err)
 			os.Exit(1)
 		}
-		clusterID, err := restClient.ClusterID()
-		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
-		}
-		cluster, err := restClient.GetCluster(clusterID)
+		cluster, err := getCluster(cmd, args)
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)
@@ -390,12 +406,7 @@ var clusterClearEmailAlertsCmd = &cobra.Command{
 	Use:   "clear-email-alerts",
 	Short: "remove set email alert settings",
 	Run: func(cmd *cobra.Command, args []string) {
-		clusterID, err := restClient.ClusterID()
-		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
-		}
-		cluster, err := restClient.GetCluster(clusterID)
+		cluster, err := getCluster(cmd, args)
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)
@@ -412,12 +423,7 @@ var clusterTestEmailCmd = &cobra.Command{
 	Use:   "test-email",
 	Short: "send a test email to verify the email alert settings",
 	Run: func(cmd *cobra.Command, args []string) {
-		clusterID, err := restClient.ClusterID()
-		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
-		}
-		cluster, err := restClient.GetCluster(clusterID)
+		cluster, err := getCluster(cmd, args)
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)
@@ -458,12 +464,7 @@ var clusterEnableSSOCmd = &cobra.Command{
 			fmt.Println(err)
 			os.Exit(1)
 		}
-		clusterID, err := restClient.ClusterID()
-		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
-		}
-		cluster, err := restClient.GetCluster(clusterID)
+		cluster, err := getCluster(cmd, args)
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)
@@ -480,12 +481,7 @@ var clusterDisableSSOCmd = &cobra.Command{
 	Use:   "disable-sso",
 	Short: "Disable Single Sign-On (SSO) for the cluster",
 	Run: func(cmd *cobra.Command, args []string) {
-		clusterID, err := restClient.ClusterID()
-		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
-		}
-		cluster, err := restClient.GetCluster(clusterID)
+		cluster, err := getCluster(cmd, args)
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)
@@ -502,13 +498,7 @@ var clusterSSOInfoCmd = &cobra.Command{
 	Use:   "sso-info",
 	Short: "Get information about the current SSO configuration",
 	Run: func(cmd *cobra.Command, args []string) {
-		clusterID, err := restClient.ClusterID()
-		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
-		}
-
-		cluster, err := restClient.GetCluster(clusterID)
+		cluster, err := getCluster(cmd, args)
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)
@@ -520,6 +510,57 @@ var clusterSSOInfoCmd = &cobra.Command{
 		}
 		fmt.Println(formatString(ssoInfo))
 	},
+}
+
+var clusterStatusCmd = &cobra.Command{
+	Use:   "status",
+	Short: "Get the status of the cluster",
+	Run: func(cmd *cobra.Command, args []string) {
+		cluster, err := getCluster(cmd, args)
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+		status, err := cluster.Status(restClient)
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+		fmt.Println(formatString(status))
+	},
+}
+
+var clusterMembersCmd = &cobra.Command{
+	Use:   "members",
+	Short: "List the members of the cluster",
+	Run: func(cmd *cobra.Command, args []string) {
+		cluster, err := getCluster(cmd, args)
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+		members, err := cluster.Members(restClient)
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+		fmt.Println(formatString(members))
+	},
+}
+
+func getCluster(cmd *cobra.Command, _ []string) (*rest.Cluster, error) {
+	var clusterId string
+	if cmd.Flags().Changed("id") {
+		clusterId = cmd.Flags().Lookup("id").Value.String()
+	} else {
+		var err error
+		clusterId, err = restClient.ClusterID()
+		if err != nil {
+			return nil, err
+		}
+	}
+	cluster, err := restClient.GetCluster(clusterId)
+	return &cluster, err
 }
 
 func init() {
@@ -538,14 +579,26 @@ func init() {
 	clusterCmd.AddCommand(enableBackupCmd)
 	enableBackupCmd.Flags().String("start-window", "00:00:00", "Time to start running backups")
 	enableBackupCmd.Flags().String("end-window", "04:00:00", "Time to stop running backups")
+	enableBackupCmd.Flags().StringP("id", "i", "", "cluster id")
 	clusterCmd.AddCommand(disableBackupCmd)
+	disableBackupCmd.Flags().StringP("id", "i", "", "cluster id")
 
 	clusterCmd.AddCommand(enableSharedStorageCmd)
 	enableSharedStorageCmd.Flags().IntP("storage-utilization", "s", 75, "Percentage of disk to allocate to shared storage")
 	enableSharedStorageCmd.Flags().Int("set-size", 3, "minimum number of hosts to increase the shared storage by")
+	enableSharedStorageCmd.Flags().StringP("id", "i", "", "cluster id")
 	addTaskFlags(enableSharedStorageCmd)
 	clusterCmd.AddCommand(disableSharedStorageCmd)
 	addTaskFlags(disableSharedStorageCmd)
+	disableSharedStorageCmd.Flags().StringP("id", "i", "", "cluster id")
+
+	clusterCmd.AddCommand(restartSharedStorageCmd)
+	restartSharedStorageCmd.Flags().StringP("id", "i", "", "cluster id")
+
+	clusterCmd.AddCommand(enableHiveSenseCmd)
+	clusterCmd.AddCommand(disableHiveSenseCmd)
+	enableHiveSenseCmd.Flags().StringP("id", "i", "", "cluster id")
+	disableHiveSenseCmd.Flags().StringP("id", "i", "", "cluster id")
 
 	clusterCmd.AddCommand(clusterGetBrokerCmd)
 	clusterCmd.AddCommand(clusterSetBrokerCmd)
@@ -561,7 +614,16 @@ func init() {
 	clusterCmd.AddCommand(clusterEmailAlertsCmd)
 	clusterCmd.AddCommand(clusterClearEmailAlertsCmd)
 	clusterCmd.AddCommand(clusterTestEmailCmd)
+
 	clusterCmd.AddCommand(clusterEnableSSOCmd)
 	clusterCmd.AddCommand(clusterDisableSSOCmd)
+	clusterEnableSSOCmd.Flags().StringP("id", "i", "", "cluster id")
+	clusterDisableSSOCmd.Flags().StringP("id", "i", "", "cluster id")
 	clusterCmd.AddCommand(clusterSSOInfoCmd)
+	clusterSSOInfoCmd.Flags().StringP("id", "i", "", "cluster id")
+
+	clusterCmd.AddCommand(clusterStatusCmd)
+	clusterStatusCmd.Flags().StringP("id", "i", "", "cluster id")
+	clusterCmd.AddCommand(clusterMembersCmd)
+	clusterMembersCmd.Flags().StringP("id", "i", "", "cluster id")
 }
