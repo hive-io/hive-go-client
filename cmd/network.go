@@ -139,6 +139,24 @@ var hostDeleteNetworkCmd = &cobra.Command{
 	},
 }
 
+var hostRestartDNSCmd = &cobra.Command{
+	Use:    "restart-dns {-i hostid | -n hostname | --ip ip_address }",
+	Short:  "restart systemd-resolved on a host",
+	PreRun: bindHostIDFlags,
+	Run: func(cmd *cobra.Command, args []string) {
+		host, err := getHost(cmd, args)
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+		err = host.RestartDNS(restClient)
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+	},
+}
+
 func init() {
 	hostCmd.AddCommand(hostNetworkCmd)
 	hostNetworkCmd.AddCommand(hostListNetworksCmd)
@@ -151,4 +169,6 @@ func init() {
 	addHostIDFlags(hostDeleteNetworkCmd)
 	hostNetworkCmd.AddCommand(hostListInterfacesCmd)
 	addHostIDFlags(hostListInterfacesCmd)
+	hostNetworkCmd.AddCommand(hostRestartDNSCmd)
+	addHostIDFlags(hostRestartDNSCmd)
 }

@@ -367,6 +367,12 @@ func (host *Host) RestartNetworking(client *Client) error {
 	return err
 }
 
+// RestartDNS restarts systemd-resolved on the host
+func (host *Host) RestartDNS(client *Client) error {
+	_, err := client.request("POST", "host/"+host.Hostid+"/networking/restartDNS", nil)
+	return err
+}
+
 // ChangeGatewayMode enable or disable gateway mode on the host
 func (host *Host) ChangeGatewayMode(client *Client, enable bool) error {
 	jsonValue, _ := json.Marshal(map[string]interface{}{"enable": enable})
