@@ -283,6 +283,60 @@ var guestShutdownCmd = &cobra.Command{
 	},
 }
 
+var guestSuspendCmd = &cobra.Command{
+	Use:   "suspend [Name]",
+	Short: "suspend guest",
+	Args:  cobra.ExactArgs(1),
+	Run: func(cmd *cobra.Command, args []string) {
+		guest, err := restClient.GetGuest(args[0])
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+		guest.Suspend(restClient)
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+	},
+}
+
+var guestResumeCmd = &cobra.Command{
+	Use:   "resume [Name]",
+	Short: "resume guest",
+	Args:  cobra.ExactArgs(1),
+	Run: func(cmd *cobra.Command, args []string) {
+		guest, err := restClient.GetGuest(args[0])
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+		guest.Resume(restClient)
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+	},
+}
+
+var guestMessageCmd = &cobra.Command{
+	Use:   "message [Name] [Title] [Message]",
+	Short: "send a message to the guest",
+	Args:  cobra.ExactArgs(3),
+	Run: func(cmd *cobra.Command, args []string) {
+		guest, err := restClient.GetGuest(args[0])
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+		err = guest.Message(restClient, args[1], args[2])
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+	},
+}
+
 var guestBackupCmd = &cobra.Command{
 	Use:   "backup [Name]",
 	Short: "start guest backup",
@@ -362,6 +416,52 @@ var guestMigrateCmd = &cobra.Command{
 			os.Exit(1)
 		}
 		guest.Migrate(restClient, viper.GetString("hostid"))
+	},
+}
+
+var guestAttachCdromCmd = &cobra.Command{
+	Use:   "attach-cdrom [Name]",
+	Short: "attach a cdrom to a guest",
+	Args:  cobra.ExactArgs(1),
+	PreRun: func(cmd *cobra.Command, args []string) {
+		viper.BindPFlag("storage", cmd.Flags().Lookup("storage"))
+		viper.BindPFlag("filename", cmd.Flags().Lookup("filename"))
+		cmd.MarkFlagRequired("storage")
+		cmd.MarkFlagRequired("filename")
+	},
+	Run: func(cmd *cobra.Command, args []string) {
+		guest, err := restClient.GetGuest(args[0])
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+		err = guest.AttachCdrom(restClient, viper.GetString("storage"), viper.GetString("filename"))
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+	},
+}
+
+var guestEjectCdromCmd = &cobra.Command{
+	Use:   "eject-cdrom [Name]",
+	Short: "eject a cdrom from a guest",
+	Args:  cobra.ExactArgs(1),
+	PreRun: func(cmd *cobra.Command, args []string) {
+		viper.BindPFlag("device", cmd.Flags().Lookup("device"))
+		cmd.MarkFlagRequired("device")
+	},
+	Run: func(cmd *cobra.Command, args []string) {
+		guest, err := restClient.GetGuest(args[0])
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+		err = guest.EjectCdrom(restClient, viper.GetString("device"))
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
 	},
 }
 
@@ -523,6 +623,9 @@ func init() {
 	guestCmd.AddCommand(guestReleaseCmd)
 	guestCmd.AddCommand(guestResetCmd)
 	guestCmd.AddCommand(guestShutdownCmd)
+	guestCmd.AddCommand(guestSuspendCmd)
+	guestCmd.AddCommand(guestResumeCmd)
+	guestCmd.AddCommand(guestMessageCmd)
 	guestCmd.AddCommand(guestUpdateCmd)
 
 	guestCmd.AddCommand(guestBackupCmd)
@@ -539,6 +642,13 @@ func init() {
 
 	guestCmd.AddCommand(guestMigrateCmd)
 	guestMigrateCmd.Flags().String("hostid", "", "The host the guest will be migrated to")
+
+	guestCmd.AddCommand(guestAttachCdromCmd)
+	guestAttachCdromCmd.Flags().String("storage", "", "storage pool id where the iso is located")
+	guestAttachCdromCmd.Flags().String("filename", "", "filename of the iso to attach")
+
+	guestCmd.AddCommand(guestEjectCdromCmd)
+	guestEjectCdromCmd.Flags().String("device", "sda", "cdrom device to eject")
 
 	guestCmd.AddCommand(guestAddExternalCmd)
 	guestCmd.AddCommand(guestUpdateExternalCmd)

@@ -328,6 +328,35 @@ func (guest *Guest) Reset(client *Client) error {
 	return err
 }
 
+func (guest *Guest) Suspend(client *Client) error {
+	if guest.Name == "" {
+		return errors.New("name cannot be empty")
+	}
+	_, err := client.request("POST", "guest/"+url.PathEscape(guest.Name)+"/suspend", nil)
+	return err
+}
+
+func (guest *Guest) Resume(client *Client) error {
+	if guest.Name == "" {
+		return errors.New("name cannot be empty")
+	}
+	_, err := client.request("POST", "guest/"+url.PathEscape(guest.Name)+"/resume", nil)
+	return err
+}
+
+func (guest *Guest) Message(client *Client, title, message string) error {
+	if guest.Name == "" {
+		return errors.New("name cannot be empty")
+	}
+	data := map[string]string{"title": title, "message": message}
+	jsonValue, err := json.Marshal(data)
+	if err != nil {
+		return err
+	}
+	_, err = client.request("POST", "guest/"+url.PathEscape(guest.Name)+"/message", jsonValue)
+	return err
+}
+
 // Update a guest record
 func (guest *Guest) Update(client *Client) (string, error) {
 	var result string
@@ -422,6 +451,36 @@ func (guest *Guest) Migrate(client *Client, destinationHostid string) error {
 	return err
 }
 
+func (guest *Guest) AttachCdrom(client *Client, storagePoolId, filename string) error {
+	if guest.Name == "" {
+		return errors.New("name cannot be empty")
+	}
+	data := map[string]string{"storage": storagePoolId, "filename": filename}
+	jsonValue, err := json.Marshal(data)
+	if err != nil {
+		return err
+	}
+	_, err = client.request("POST", "guest/"+url.PathEscape(guest.Name)+"/attachCdrom", jsonValue)
+	return err
+}
+
+func (guest *Guest) EjectCdrom(client *Client, device string) error {
+	if guest.Name == "" {
+		return errors.New("name cannot be empty")
+	}
+	data := map[string]string{"device": device}
+	jsonValue, err := json.Marshal(data)
+	if err != nil {
+		return err
+	}
+	_, err = client.request("POST", "guest/"+url.PathEscape(guest.Name)+"/ejectCdrom", jsonValue)
+	return err
+}
+
+func IsGuestRunning(guest Guest) bool {
+	return guest.GuestState == "running"
+}
+
 func IsGuestReady(guest Guest) bool {
 	return guest.GuestState == "ready"
 }
@@ -442,7 +501,7 @@ func GuestHasIpAddress(guest Guest) bool {
 			return true
 		}
 	}
-	return true
+	return false
 }
 
 // WaitForGuest waits for a guest state to match the targetState
@@ -552,4 +611,20 @@ func (guest *ExternalGuest) Update(client *Client) (string, error) {
 		result = string(body)
 	}
 	return result, err
+}
+
+type GuestDetails struct {
+	ProdMac     string `json:"prodmac"`
+	UUID        string `json:"uuid"`
+	VNCPassword string `json:"vncPassword"`
+}
+
+func (guest *Guest) Details(client *Client) (GuestDetails, error) {
+	body, err := client.request("GET", "guest/"+url.PathEscape(guest.Name)+"/guestDetails", nil)
+	if err != nil {
+		return GuestDetails{}, err
+	}
+	var details GuestDetails
+	err = json.Unmarshal(body, &details)
+	return details, err
 }
