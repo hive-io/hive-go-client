@@ -5,8 +5,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"net/url"
 	"time"
+
+	"github.com/coder/websocket"
+	"github.com/mitchellh/go-vnc"
 )
 
 // Guest describes a guest record from the rest api
@@ -485,6 +489,10 @@ func IsGuestReady(guest Guest) bool {
 	return guest.GuestState == "ready"
 }
 
+func IsGuestStopped(guest Guest) bool {
+	return guest.GuestState == "stopped"
+}
+
 // compare GuestState to TargetState
 func GuestHasTargetState(guest Guest) bool {
 	for _, v := range guest.TargetState {
@@ -505,24 +513,29 @@ func GuestHasIpAddress(guest Guest) bool {
 }
 
 // WaitForGuest waits for a guest state to match the targetState
-func (guest Guest) WaitForGuest(client *Client, timeout time.Duration) error {
+func (guest *Guest) WaitForGuest(client *Client, timeout time.Duration) error {
 	return guest.WaitForGuestWithContext(context.Background(), client, timeout)
 }
 
 // WaitForGuestWithContext waits for a guest state to match the targetState
-func (guest Guest) WaitForGuestWithContext(ctx context.Context, client *Client, timeout time.Duration) error {
+func (guest *Guest) WaitForGuestWithContext(ctx context.Context, client *Client, timeout time.Duration) error {
 	return guest.WaitForGuestChange(ctx, client, timeout, GuestHasTargetState)
 }
 
-// WaitForGuestChange block until a guest changefeed update matches a validation function
-func (guest Guest) WaitForGuestChange(ctx context.Context, client *Client, timeout time.Duration, validate func(Guest) bool) error {
-	if validate(guest) {
+func (guest *Guest) WaitForGuestChange(ctx context.Context, client *Client, timeout time.Duration, validate func(Guest) bool) error {
+	if validate(*guest) {
 		return nil
 	}
+	guest, err := WaitForGuestChange(ctx, client, timeout, map[string]string{"name": guest.Name}, validate)
+	return err
+}
+
+// WaitForGuestChange block until a guest changefeed update matches a validation function
+func WaitForGuestChange(ctx context.Context, client *Client, timeout time.Duration, query map[string]string, validate func(Guest) bool) (*Guest, error) {
 	newVal := Guest{}
-	feed, err := client.GetChangeFeedWithContext(ctx, "guest", map[string]string{"name": guest.Name}, false)
+	feed, err := client.GetChangeFeedWithContext(ctx, "guest", query, true)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	timer := time.NewTimer(timeout)
 	if timeout <= 0 && !timer.Stop() {
@@ -531,21 +544,21 @@ func (guest Guest) WaitForGuestChange(ctx context.Context, client *Client, timeo
 	for {
 		select {
 		case <-timer.C:
-			return fmt.Errorf("timed out")
+			return nil, fmt.Errorf("timed out")
 		case msg := <-feed.Data:
 			if msg.Error != nil {
 				feed.Close()
-				return msg.Error
+				return nil, msg.Error
 			}
 			err = json.Unmarshal(msg.NewValue, &newVal)
 			if err != nil {
 				err = fmt.Errorf("error with json unmarshal: %v", err)
 				feed.Close()
-				return err
+				return nil, err
 			}
 			if validate(newVal) {
 				feed.Close()
-				return nil
+				return &newVal, nil
 			}
 		}
 	}
@@ -627,4 +640,49 @@ func (guest *Guest) Details(client *Client) (GuestDetails, error) {
 	var details GuestDetails
 	err = json.Unmarshal(body, &details)
 	return details, err
+}
+
+// GetConsole opens a VNC connection to the guest console.
+// The console is accessed at wss://{host}:{port}/console/{host.Address}?token={guest.Name}.
+func (guest *Guest) GetConsole(client *Client) (*vnc.ClientConn, error) {
+	if guest.Name == "" {
+		return nil, errors.New("name cannot be empty")
+	}
+	protocol := "wss"
+	if client.Port == 3000 {
+		protocol = "ws"
+	}
+	details, err := guest.Details(client)
+	if err != nil {
+		return nil, fmt.Errorf("error getting guest details: %w", err)
+	}
+	log.Printf("Guest details: %+v\n", details)
+	host, err := client.GetHost(guest.Hostid)
+	if err != nil {
+		return nil, fmt.Errorf("error getting host details: %w", err)
+	}
+	consoleURL := fmt.Sprintf("%s://%s:%d/console/%s?token=%s",
+		protocol, client.Host, client.Port, host.IP, url.QueryEscape(guest.Name))
+
+	u, err := url.Parse(consoleURL)
+	if err != nil {
+		return nil, fmt.Errorf("error parsing console URL: %w", err)
+	}
+	fmt.Printf("Connecting to url: %s", u.String())
+	options := &websocket.DialOptions{
+		HTTPClient: client.httpClient,
+	}
+	ws, _, err := websocket.Dial(context.Background(), u.String(), options)
+	if err != nil {
+		log.Printf("Error connecting to VNC console: %v\n", err)
+		return nil, err
+	}
+	nc := websocket.NetConn(context.Background(), ws, websocket.MessageBinary)
+	auth := []vnc.ClientAuth{&vnc.PasswordAuth{Password: details.VNCPassword}}
+	c, err := vnc.Client(nc, &vnc.ClientConfig{Auth: auth, Exclusive: false})
+	if err != nil {
+		log.Printf("Error creating VNC client: %v\n", err)
+		return nil, err
+	}
+	return c, err
 }
