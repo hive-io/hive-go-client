@@ -149,12 +149,18 @@ func (template *Template) Analyze(client *Client) error {
 }
 
 // Author creates a virtual machine to author a template
-func (template *Template) Author(client *Client) error {
+func (template *Template) Author(client *Client) (*Task, error) {
 	if template.Name == "" {
-		return errors.New("name cannot be empty")
+		return nil, errors.New("name cannot be empty")
 	}
-	_, err := client.request("PUT", "template/"+url.PathEscape(template.Name)+"/author", nil)
-	return err
+	resp, err := client.request("PUT", "template/"+url.PathEscape(template.Name)+"/author", nil)
+	if err != nil {
+		return nil, err
+	}
+	if err := client.CheckHostVersion("9.0.0"); err == nil {
+		return client.getTaskFromResponse(resp, nil)
+	}
+	return client.GetTaskByName("authorTemplate-" + template.Name)
 }
 
 // ExitAuthoring exits the authoring mode of a template
@@ -162,7 +168,7 @@ func (template *Template) ExitAuthoring(client *Client) error {
 	if template.Name == "" {
 		return errors.New("name cannot be empty")
 	}
-	_, err := client.request("PUT", "template/"+url.PathEscape(template.Name)+"/exitauthor", nil)
+	_, err := client.request("POST", "template/"+url.PathEscape(template.Name)+"/exitAuthor", nil)
 	return err
 }
 
